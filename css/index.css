@@ -1,0 +1,50 @@
+/*!
+ * Start Bootstrap - Blog Post (http://startbootstrap.com/)
+ * Copyright 2013-2016 Start Bootstrap
+ * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap/blob/gh-pages/LICENSE)
+ */
+
+/* Bootstrap should take care of most CSS */
+/* This is for custom CSS */
+
+body {
+    padding-top: 70px; 
+}
+
+footer {
+    bottom:0;
+    height:45px;
+    width:100%;
+    
+}
+
+.navbar-brand {
+    font-size: 200%;
+    font-family: 'Bungee';
+
+}
+.panel-primary>.panel-heading {
+    background-color: #333;
+
+}
+.panel-primary {
+    border-color: #333;
+}
+
+.navbar-inverse {
+    background-color:#0c3054;
+    border-color:#122b40;
+}
+.navbar-inverse .navbar-nav>li>a {
+    color:#c9c9c9;
+    font-weight:bold;
+}
+.navbar-inverse .navbar-brand {
+    color:whitesmoke;    
+}
+.glyphicon.glyphicon-cog {
+    font-size: 80%;
+}
+
+
+

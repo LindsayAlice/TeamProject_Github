@@ -1,0 +1,6 @@
+<?php
+
+    include 'includes/header.php';
+    include 'templates/login.php';
+    include 'includes/footer.php';
+    // DYNAMICAL!

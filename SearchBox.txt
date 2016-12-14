@@ -1,0 +1,7 @@
+ <!-- Search Form:  note edit css to view search icon-->
+            <form method="get" action="/Coffeebuzz_PHP/search.php" class="navbar-form navbar-right">
+                <div class="right-inner-addon">
+                    <input class="form-control typeahead tt-query" type="text" placeholder="Search..." id="s" name="s" autocomplete="off" spellcheck="false"/>
+                    <input type="submit" style="height: 0px; width: 0px; border: none; padding: 0px;" hidefocus="true" />
+                </div>
+            </form>
