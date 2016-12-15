@@ -9,8 +9,9 @@
  * U - Update
  * D - Delete
  *
- * @author mwilliams
+ * @author Lindsay
  */
+
 class DbHandler {
 
     //private connection variable
@@ -27,17 +28,26 @@ class DbHandler {
         } catch (Exception $ex) {
             $this::dbConnectError($ex->getCode());
         }
-    }
+    }//end of constructor
+ private function isUserEmailExists($EmailAddress) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) from users WHERE EmailAddress = :EmailAddress");
+        $stmt->bindValue(':EmailAddress', $EmailAddress, PDO::PARAM_STR);
+        $stmt->execute();
+        $num_rows = $stmt->fetchColumn();
 
-//end of constructor
-    //A static function allows to make a calls to it without
-    //instantiating the class.  In other words with using the 
-    //new keyword, for example
-    //$dbh = new DbHandler();
-    //$dbh->dbConnectError(1045);
-    //Instead we can call it directly like this
-    //$this::dbConnectError(1045);
-    private static function dbConnectError($code) {
+        return $num_rows > 0;
+    }
+    
+     private function isUserExists($UserName) {
+        $stmt = $this->conn->prepare("SELECT COUNT(*) from users WHERE UserName = :UserName");
+        $stmt->bindValue(':UserName', $UserName, PDO::PARAM_STR);
+        $stmt->execute();
+        $num_rows = $stmt->fetchColumn();
+
+        return $num_rows > 0;
+    }
+    
+        private static function dbConnectError($code) {
         switch ($code) {
             case 1045:
                 echo "A database access error has occured!";
@@ -49,109 +59,9 @@ class DbHandler {
                 echo "An server error has occured!";
                 break;
         }
-    }
-
-//End of DbConnectError 
-
-    /**
-     * getCategoryList() function
-     * Get a list of categories for creating menu system
-     */
-    public function getCategoryList() {
-        $sql = "SELECT id, category,Summary.total 
-                FROM categories JOIN (SELECT COUNT(*) AS total, 
-                                  category_id
-                                  FROM pages
-                                  GROUP BY category_id) AS Summary
-                WHERE categories.id = Summary.category_id
-                ORDER BY category";
-        try {
-            $stmt = $this->conn->query($sql);
-            $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $data = array('error' => false,
-                'items' => $categories);
-        } catch (PDOException $ex) {
-            $data = array('error' => true,
-                'message' => $ex->getMessage()
-            );
-        }
-
-        //return the data back to calling environment
-        return $data;
-    }
-
-    /**
-     * getPoularList() function
-     * Get a list of 6 most popular article for home page
-     */
-    public function getPopularList() {
-        $sql = "SELECT COUNT(*)AS num, page_id, pages.title, 
-                       CONCAT(LEFT(pages.description,30),'...') AS description
-                 FROM history JOIN pages ON pages.id = history.page_id
-                 WHERE type = 'page'
-                 GROUP BY page_id
-                 ORDER BY 1 DESC
-                 LIMIT 6";
-        try {
-            $stmt = $this->conn->query($sql);
-            $popular = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $data = array('error' => false,
-                'items' => $popular);
-        } catch (PDOException $ex) {
-            $data = array('error' => true,
-                'message' => $ex->getMessage()
-            );
-        }
-
-        //return the data back to calling environment
-        return $data;
-    }
-
-//End of getPopularList method 
-
-    /**
-     * getArticleByCategory
-     * Get all articles for a particular category id
-     * @param type $id
-     * @return array
-     */
-    public function getArticlesByCategory($id) {
-        try {
-            $stmt = $this->conn->prepare("SELECT category, pages.id, title,description 
-                                            FROM pages JOIN categories 
-                                            ON category_id = categories.id
-                                            WHERE category_id=:id
-                                            ORDER BY date_created DESC");
-            //Bind the parameters
-            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
-            //Execute the query
-            $stmt->execute();
-
-            //Fetch as associative array
-            $pages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            //Pass it to array
-            $data = array('error' => false,
-                'items' => $pages);
-        } catch (Exception $ex) {
-            $data = array('error' => true,
-                'message' => $ex->getMessage()
-            );
-        }
-        //return the data array back to calling environment
-        return $data;
-    }
-
-// End of getArticlesByCategory method
-
-    /**
-     * getArticle
-     * Get a single article (page) for corresponding id parameter 
-     * passed in
-     * @param type $id
-     * @return aray
-     */
-    public function getArticle($id) {
+    }//End of DbConnectError 
+    
+    public function getPosts($Postid) {
         try {
             //Prepare our sql query
             $stmt = $this->conn->prepare("SELECT title, description, content  
@@ -159,7 +69,7 @@ class DbHandler {
                                          WHERE id=:id");
 
             //Bind the query parameters
-            $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+            $stmt->bindValue(':Postid', $Postid, PDO::PARAM_INT);
 
             //Execute the query
             $stmt->execute();
@@ -180,25 +90,19 @@ class DbHandler {
         //return the data array 
         return $data;
     }
-
-//End of getArticle method  
-
-    /**
-     * getArticleList
-     * Get a list of article (pages)
-     * @return array
-     */
-    public function getArticleList() {
+    
+    
+     public function getPostList() {
         //build the sql query
         $sql = "SELECT id, title, description FROM pages ORDER BY title";
 
         //try to fetch all records
         try {
             $stmt = $this->conn->query($sql);
-            $articles = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $data = array(
                 'error' => false,
-                'items' => $articles
+                'items' => $Posts
             );
         } catch (PDOException $ex) {
             $data = array(
@@ -211,31 +115,27 @@ class DbHandler {
         return $data;
     }//End of getArticleList
 
-    /*     * ************************ NEW STUFF ************************************ */
-
-    /**
-     * Creating new user
-     * @param String $email User login email id
-     * @param String $password User login password
-     * @param String $first_name User first name
-     * @param String $last_name User last name
-     */
-    public function createUser($email, $password, $first_name, $last_name) {
+      public function createUser ($FirstName,$LastName,$EmailAddress,$HeardAboutUs,$JoiningReason,$UserName,$UserPassword) {
         // First check if user already existed in db
-        if (!$this->isUserExists($email)) {
+          
+        if (!$this->isUserEmailExists($EmailAddress) and !$this->isUserExists($UserName)) {
             // Generating password hash
-            $password_hash = PassHash::hash($password);
+            $password_hash = PassHash::hash($UserPassword);
 
             // Make activation code
             $active = md5(uniqid(rand(), true));
 
-            $stmt = $this->conn->prepare("INSERT INTO users(email,pass,first_name,last_name,date_expires,active) values(:email, :pass, :fname, :lname, SUBDATE(NOW(), INTERVAL 1 DAY), :active)");
+            $stmt = $this->conn->prepare("INSERT INTO Users"
+                    . "(EmailAddress,FirstName,LastName,HeardAboutUs,JoiningReason,UserName,UserPassword) "
+                    . "values(:Email_Address,:First_Name,:Last_Name,:Heard_About_Us,:Joining_Reason,:User_Name,:User_Password)");
 
-            $stmt->bindValue(':email', $email, PDO::PARAM_STR);
-            $stmt->bindValue(':pass', $password_hash, PDO::PARAM_STR);
-            $stmt->bindValue(':fname', $first_name, PDO::PARAM_STR);
-            $stmt->bindValue(':lname', $last_name, PDO::PARAM_STR);
-            $stmt->bindValue(':active', $active, PDO::PARAM_STR);
+            $stmt->bindValue(':First_Name', $FirstName, PDO::PARAM_STR);
+            $stmt->bindValue(':Last_Name', $LastName, PDO::PARAM_STR);
+            $stmt->bindValue(':Email_Address', $EmailAddress, PDO::PARAM_STR);
+            $stmt->bindValue(':Heard_About_Us', $HeardAboutUs, PDO::PARAM_STR);
+	    $stmt->bindValue(':Joining_Reason', $JoiningReason, PDO::PARAM_STR);            
+            $stmt->bindValue(':User_Name', $UserName, PDO::PARAM_STR);
+            $stmt->bindValue(':User_Password', $password_hash, PDO::PARAM_STR);
 
             $result = $stmt->execute();
 
@@ -263,92 +163,14 @@ class DbHandler {
                 'message' => 'USER_ALREADY_EXISTS'
             );
         }
-
-        return $data;
-    }
-
-    /**
-     * checkLogin
-     * Check user login
-     * @param type $email
-     * @param type $password
-     * @return boolean
-     */
-    public function checkLogin($email, $password) {
-        // fetching user by email
-        //var_dump($email);
-        //var_dump($password);
-        //var_dump(PassHash::hash($password));
-        //exit();
-        //1. Check if email exists
-
-        $stmt = $this->conn->prepare("SELECT COUNT(*) from users WHERE email = :email");
-        $stmt->bindValue(':email', $email, PDO::PARAM_STR);
-        $stmt->execute();
-        $num_rows = $stmt->fetchColumn();
-        //var_dump($num_rows);
-        //exit();
-        if ($num_rows > 0) {
-            //2. Actual query
-            $stmt = $this->conn->prepare("SELECT pass from users WHERE email = :email");
-            $stmt->bindValue(':email', $email, PDO::PARAM_STR);
-            $stmt->execute();
-            $row = $stmt->fetch(PDO::FETCH_OBJ);
-
-            if (PassHash::check_password($row->pass, $password)) {
-                // User password is correct
-                return TRUE;
-            } else {
-                // user password is incorrect
-                return FALSE;
-            }
-        } else {
-            // user not existed with the email
-            return FALSE;
-        }
-    }
-
-    /**
-     * getUserByEmail
-     * @param type $email
-     * @return type
-     */
-    public function getUserByEmail($email) {
-        try {
-            $stmt = $this->conn->prepare("SELECT id, type, email, first_name, last_name, 
-                                         IF(date_expires>=NOW(),true,false) as notexpired,
-                                         IF(type='admin',true,false)as admin
-                                         FROM users WHERE email = :email");
-            $stmt->bindValue(':email', $email, PDO::PARAM_STR);
-
-            if ($stmt->execute()) {
-                $user = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                //return $user;
-                $data = array('error'=>false,
-                              'items'=>$user); 
-                return $data;
-            } else {
-                return NULL;
-            }
-        } catch (PDOException $e) {
-            return NULL;
-        }
-    }
-
-    /**
-     * Checking for duplicate user by email address
-     * @param String $email email to check in db
-     * @return boolean
-     */
-    private function isUserExists($email) {
-        $stmt = $this->conn->prepare("SELECT COUNT(*) from users WHERE email = :email");
-        $stmt->bindValue(':email', $email, PDO::PARAM_STR);
-        $stmt->execute();
-        $num_rows = $stmt->fetchColumn();
-
-        return $num_rows > 0;
-    }
-
+    
+    
+    
+    
+    
+    
 }
 
-//end of class
+} 
+
+?>  
